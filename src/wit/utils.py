@@ -38,6 +38,10 @@ TRACKING_PARAMS = {
     # Session/cache busting
     "ref",
     "source",
+    # Vercel stamps every /_next/image URL with the deployment id, which
+    # rotates on each deploy and rewrote every image reference on a tracked
+    # Next.js site (12 pages per deploy) without any content changing.
+    "dpl",
 }
 
 

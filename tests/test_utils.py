@@ -42,6 +42,11 @@ class TestNormalizeUrl:
 
 class TestStripTrackingParams:
     """Tests for strip_tracking_params function."""
+
+    def test_strips_vercel_deployment_id(self):
+        """The dpl param rotates on every Vercel deploy; it must not survive."""
+        url = "https://example.com/_next/image?url=%2Fa.png&w=256&q=75&dpl=dpl_abc123"
+        assert strip_tracking_params(url) == "https://example.com/_next/image?url=%2Fa.png&w=256&q=75"
     
     def test_no_query_string(self):
         """Test URL without query string is unchanged."""
