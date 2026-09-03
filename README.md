@@ -127,6 +127,8 @@ pages:
     - /pricing
     - /docs
     - /blog/*  # glob pattern - scrape all matching links
+    - /release-notes/{year}  # {year} and {month} resolve to today's date,
+                             # for sites that publish one page per period
   
   # Option 2: sitemap
   sitemap: /sitemap.xml

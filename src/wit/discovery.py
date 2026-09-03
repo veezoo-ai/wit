@@ -5,6 +5,7 @@ import time
 import xml.etree.ElementTree as ET
 from collections import deque
 from typing import Callable, TYPE_CHECKING
+from datetime import date
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -85,6 +86,19 @@ def discover_pages(config: "WitConfig", fetch_func: Callable | None = None) -> l
     return []
 
 
+def expand_date_placeholders(url: str, today: date | None = None) -> str:
+    """Resolve {year} and {month} in a URL pattern to the current date.
+    
+    Some sites publish a fresh page per period and never offer a stable alias
+    (e.g. .../release-notes/2026). Without this, such a URL silently freezes
+    on New Year's Day and someone has to remember to bump it.
+    """
+    if "{" not in url:
+        return url
+    today = today or date.today()
+    return url.replace("{year}", f"{today.year}").replace("{month}", f"{today.month:02d}")
+
+
 def discover_from_urls(
     base_url: str, 
     urls: list[str], 
@@ -106,6 +120,8 @@ def discover_from_urls(
     result = set()
     
     for url_pattern in urls:
+        url_pattern = expand_date_placeholders(url_pattern)
+        
         # Check if pattern contains wildcard
         if "*" in url_pattern:
             # Need to fetch the parent page and find matching links

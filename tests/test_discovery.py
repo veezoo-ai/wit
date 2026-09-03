@@ -442,3 +442,29 @@ class TestDiscoverPages:
         # Should only return pages from first site
         assert "https://site1.com/page1" in urls
         assert "https://site2.com/page2" not in urls
+
+
+class TestDatePlaceholders:
+    """{year} lets a per-year release-notes URL roll over without a config edit."""
+
+    def test_year_is_expanded(self):
+        from datetime import date
+        from wit.discovery import expand_date_placeholders
+        out = expand_date_placeholders("/ai-bi/release-notes/{year}", today=date(2027, 1, 3))
+        assert out == "/ai-bi/release-notes/2027"
+
+    def test_month_is_zero_padded(self):
+        from datetime import date
+        from wit.discovery import expand_date_placeholders
+        out = expand_date_placeholders("/notes/{year}/{month}", today=date(2027, 3, 1))
+        assert out == "/notes/2027/03"
+
+    def test_plain_urls_untouched(self):
+        from wit.discovery import expand_date_placeholders
+        assert expand_date_placeholders("/pricing") == "/pricing"
+
+    def test_discover_from_urls_applies_it(self):
+        from datetime import date
+        from wit.discovery import discover_from_urls
+        out = discover_from_urls("https://x.test", ["/notes/{year}"], {})
+        assert out == [f"https://x.test/notes/{date.today().year}"]
