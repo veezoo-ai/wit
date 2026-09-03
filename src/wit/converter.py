@@ -23,12 +23,17 @@ class WitMarkdownConverter(MarkdownConverter):
         if self._strip_links:
             return text
         
+        href = el.get("href")
+        
+        # blob: URLs are session-local object URLs minted by the browser (video
+        # players do this), so they are a fresh UUID on every load and can never
+        # be followed later. Keep the text, drop the link.
+        if self._normalize_urls and href and href.startswith("blob:"):
+            return text
+        
         # Normalize URL by stripping tracking parameters
-        if self._normalize_urls:
-            href = el.get("href")
-            if href:
-                normalized_href = strip_tracking_params(href)
-                el["href"] = normalized_href
+        if self._normalize_urls and href:
+            el["href"] = strip_tracking_params(href)
         
         return super().convert_a(el, text, *args, **kwargs)
     
@@ -36,7 +41,22 @@ class WitMarkdownConverter(MarkdownConverter):
         """Convert image tags."""
         if not self._include_images:
             return ""
+        # Same reasoning as blob: links above.
+        if self._normalize_urls and (el.get("src") or "").startswith("blob:"):
+            return ""
         return super().convert_img(el, text, *args, **kwargs)
+    
+    def convert_video(self, el, text, *args, **kwargs):
+        """Convert video tags.
+        
+        markdownify renders <video> as a link wrapping the poster image. When
+        the src is a blob: URL (Wistia and similar players stream through one)
+        the link target is a per-load UUID and the poster is usually a blank
+        placeholder, so the whole element is noise.
+        """
+        if self._normalize_urls and (el.get("src") or "").startswith("blob:"):
+            return ""
+        return super().convert_video(el, text, *args, **kwargs)
     
     def convert_pre(self, el, text, *args, **kwargs):
         """Convert pre tags with optional language detection."""

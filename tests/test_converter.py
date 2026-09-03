@@ -264,3 +264,36 @@ class TestAddMetadata:
         )
         
         assert '\\"quotes\\"' in result
+
+
+class TestBlobUrls:
+    """blob: URLs are per-load UUIDs from video players and carry no signal."""
+
+    def test_blob_link_keeps_text_and_drops_href(self):
+        from wit.converter import html_to_markdown
+        html = '<p><a href="blob:https://example.com/680f408d-4ebe">Watch</a></p>'
+        md = html_to_markdown(html, {})
+        assert "Watch" in md
+        assert "blob:" not in md
+
+    def test_blob_image_is_dropped(self):
+        from wit.converter import html_to_markdown
+        html = '<p>before <img src="blob:https://example.com/5fc8a687" alt="x"> after</p>'
+        md = html_to_markdown(html, {})
+        assert "blob:" not in md
+        assert "before" in md and "after" in md
+
+    def test_blob_video_is_dropped(self):
+        """<video src=blob:> is what Wistia embeds actually produce."""
+        from wit.converter import html_to_markdown
+        html = ('<p>intro</p><video poster="https://fast.wistia.com/blank.gif" '
+                'src="blob:https://example.com/727a6c17"></video><p>outro</p>')
+        md = html_to_markdown(html, {})
+        assert "blob:" not in md
+        assert "blank.gif" not in md
+        assert "intro" in md and "outro" in md
+
+    def test_ordinary_links_untouched(self):
+        from wit.converter import html_to_markdown
+        md = html_to_markdown('<a href="https://example.com/p">p</a>', {})
+        assert "https://example.com/p" in md
